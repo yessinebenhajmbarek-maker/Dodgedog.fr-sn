@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodge Dog</title>
+    <style>
+        body {
+            margin: 0;
+            background: #222;
+            color: #fff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            background: #333;
+            border: 4px solid #fff;
+            max-width: 100%;
+            max-height: 70vh;
+        }
+        h1 { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Dodge Dog</h1>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let score = 0;
+        let gameOver = false;
+
+        const player = {
+            x: 50,
+            y: 300,
+            width: 40,
+            height: 40,
+            gravity: 0.6,
+            lift: -12,
+            velocity: 0,
+            jump() {
+                if (this.y === 300) {
+                    this.velocity = this.lift;
+                }
+            },
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                if (this.y > 300) {
+                    this.y = 300;
+                    this.velocity = 0;
+                }
+            },
+            draw() {
+                ctx.fillStyle = '#ff9800'; 
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        };
+
+        const obstacles = [];
+        function spawnObstacle() {
+            obstacles.push({
+                x: canvas.width,
+                y: 310,
+                width: 30,
+                height: 30,
+                speed: 5 + score * 0.2
+            });
+        }
+
+        window.addEventListener('keydown', (e) => { if (e.code === 'Space') player.jump(); });
+        window.addEventListener('touchstart', () => { player.jump(); });
+
+        let frame = 0;
+        function animate() {
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = '40px sans-serif';
+                ctx.fillText('GAME OVER', canvas.width/2 - 110, canvas.height/2);
+                ctx.font = '20px sans-serif';
+                ctx.fillText('Score final: ' + score, canvas.width/2 - 50, canvas.height/2 + 40);
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#555';
+            ctx.fillRect(0, 340, canvas.width, 60);
+
+            player.update();
+            player.draw();
+
+            if (frame % 100 === 0) spawnObstacle();
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= obs.speed;
+                
+                ctx.fillStyle = '#e91e63';
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+                if (player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y) {
+                    gameOver = true;
+                }
+
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                    score++;
+                }
+            }
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '20px sans-serif';
+            ctx.fillText('Score: ' + score, 20, 30);
+
+            frame++;
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
